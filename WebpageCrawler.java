@@ -24,13 +24,30 @@ public class WebpageCrawler {
 			System.out.println("You need to specify a search term");
 			System.exit(0);
 		}
+		
+		try {
+			FileWriter fstream = new FileWriter("results.txt", true);
+			BufferedWriter bf = new BufferedWriter(fstream);
+			bf.write("Webpage Crawler\n");
+			bf.write("\nSearching for term: " + search + "\n");
 
-		// Get webpages to search
-		ArrayList<String> sites = getWebSites();
+			// Get webpages to search
+			ArrayList<String> sites = getWebSites();
 
-		// Process webpages in batches of 20
-		for (int i = 0; i < sites.size(); i+=20) {
-			processBatch(i, sites, search);
+			// Process webpages in batches of 20
+			for (int i = 0; i < sites.size(); i+=20) {
+				processBatch(i, sites, search, bf);
+			}
+			
+			if (bf != null) {
+				try {
+					bf.close();
+				} catch(Exception e) {
+					// do nothing
+				}
+			}
+		} catch (IOException ioe) {
+			//System.out.println("IO Error:" + ioe.getMessage());
 		}
 
 	}
@@ -42,13 +59,13 @@ public class WebpageCrawler {
 	 * @param sites List of webpage sites
 	 * @param search Term to search for
 	 */
-	public static void processBatch(int offset, ArrayList<String> sites, String search) {
+	public static void processBatch(int offset, ArrayList<String> sites, String search, BufferedWriter bf) {
 		// Create thread list to keep track of active status of threads
 		List<Thread> threads = new ArrayList<Thread>();
 
 		// Kick off 20 threads to process webpages
 		for (int i= offset; i < (offset + 20); i++) {
-			Runnable task = new WebpageCrawlerRunnable(sites.get(i), search);
+			Runnable task = new WebpageCrawlerRunnable(sites.get(i), search, bf);
 			Thread worker = new Thread(task);
 			worker.setName(String.valueOf(i));
 			worker.start();

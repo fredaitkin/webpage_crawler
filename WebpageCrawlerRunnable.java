@@ -9,6 +9,7 @@ import java.net.*;
 public class WebpageCrawlerRunnable implements Runnable {
 	private String site;
 	private String search;
+	private BufferedWriter bf;
 
 	/**
 	 * Constructor 
@@ -16,20 +17,18 @@ public class WebpageCrawlerRunnable implements Runnable {
 	 * @param site Webpage to search
 	 * @param search Term to search for
 	 */
-	WebpageCrawlerRunnable(String site, String search) {
+	WebpageCrawlerRunnable(String site, String search, BufferedWriter bf) {
 		this.site = site;
 		this.search = search;
+		this.bf = bf;
 	}
 
 	/**
 	 * Run thread 
 	 */
 	public void run() {
-		BufferedWriter results = null;
 		try {
 			System.out.println(this.site);
-			FileWriter fstream = new FileWriter("results.txt", true);
-			results = new BufferedWriter(fstream);
 
 			String protocol = "http://";
 			String protocol_secured = "https://";
@@ -52,28 +51,20 @@ public class WebpageCrawlerRunnable implements Runnable {
 				InputStream is = connection.getInputStream();
 				BufferedReader br = new BufferedReader(new InputStreamReader(is));
 				String line = null;
-				boolean header = true;
+				String found = "NOT FOUND";
 				while((line = br.readLine()) != null) {
 					if ( line.contains(this.search) ) {
-						if (header) {
-							results.write("\n" + site);
-							header = false;
-						}
-						results.write("\n" + line);
+						found = "FOUND";
+						break;
 					}
-				}            
+				}  
+				this.bf.write("\n" + this.site + ": " + found);
 			}
-		} catch (IOException ioe) {
-			//System.out.println("IO Error:" + ioe.getMessage());
-		} catch(Exception e) {
-			//System.out.println("Error: " + e.getMessage());
-		} finally {
-			if (results != null) {
-				try {
-					results.close();
-				} catch(Exception e) {
-					// do nothing
-				}
+		} catch (Exception e) {
+			try {
+				this.bf.write("\n" + this.site + ": Error retrieving page");
+			} catch (IOException ioe) {
+				// subsume
 			}
 		}
 	}
